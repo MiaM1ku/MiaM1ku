@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nya 的学习笔记 · MiaM1ku | 编程 / 科技前沿 / 人工智能</title>
+  <meta name="description" content="Nya 的学习笔记 — MiaM1ku 的个人主页与学习记录。编程爱好者，关注科技前沿与人工智能，正在学习 Python、Golang、TypeScript (Bun) 与 Android。GitHub: MiaM1ku" />
+  <meta name="keywords" content="MiaM1ku,Nya,nyaa.fun,个人主页,编程,科技前沿,人工智能,AI,Python,Golang,TypeScript,Bun,Android,开源" />
+  <meta name="author" content="MiaM1ku" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" id="themeColor" content="#08080c" />
+  <link rel="canonical" href="https://nyaa.fun/" />
+
+  <meta property="og:title" content="Nya 的学习笔记 · MiaM1ku" />
+  <meta property="og:description" content="编程爱好者，喜欢折腾代码、追科技前沿、研究人工智能。正在学习 Python、Golang、TypeScript (Bun) 与 Android。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nyaa.fun/" />
+  <meta property="og:site_name" content="Nya 的学习笔记 · nyaa.fun" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:image" content="https://q1.qlogo.cn/g?b=qq&nk=3428936776&s=640" />
+  <meta property="og:image:alt" content="MiaM1ku" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Nya 的学习笔记 · MiaM1ku" />
+  <meta name="twitter:description" content="编程爱好者 · 科技前沿 · 人工智能 · 正在学习 Python / Go / TypeScript / Android" />
+
+  <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=3428936776&s=140" />
+  <link rel="preconnect" href="https://q1.qlogo.cn" />
+  <link rel="preconnect" href="https://q.qlogo.cn" />
+
+  <!-- 首屏前置：主题 / 语言 / 滚动恢复，避免闪白与二次渲染 -->
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+
+      var theme = null, lang = null;
+      try { theme = localStorage.getItem('theme'); lang = localStorage.getItem('lang'); } catch (e) {}
+
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+      }
+      if (lang !== 'zh' && lang !== 'en') {
+        var nav = (navigator.language || navigator.userLanguage || 'zh').toLowerCase();
+        lang = nav.indexOf('zh') === 0 ? 'zh' : 'en';
+      }
+
+      d.setAttribute('data-theme', theme);
+      d.setAttribute('data-lang', lang);
+      d.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    })();
+  </script>
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "MiaM1ku",
+    "alternateName": "Nya",
+    "url": "https://nyaa.fun/",
+    "image": "https://q1.qlogo.cn/g?b=qq&nk=3428936776&s=640",
+    "description": "编程爱好者，关注科技前沿与人工智能。正在学习 Python、Golang、TypeScript (Bun) 与 Android。",
+    "knowsAbout": ["Programming", "Artificial Intelligence", "Python", "Go", "TypeScript", "Android"],
+    "sameAs": ["https://github.com/MiaM1ku"]
+  }
+  </script>
+</head>
+<body>
+  <!-- 背景动态光晕 -->
+  <div class="aurora" id="aurora" aria-hidden="true">
+    <canvas id="shaderCanvas"></canvas>
+  </div>
+
+  <!-- 自定义光标 -->
+  <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+  <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+  <!-- 导航栏 -->
+  <nav class="navbar" id="navbar" aria-label="主导航">
+    <div class="nav-logo" id="navLogo">
+      <span class="logo-mark" aria-hidden="true">◈</span>
+      <span class="logo-text" data-i18n="brand">Nya 的学习笔记</span>
+    </div>
+    <div class="nav-links">
+      <a href="#home" class="nav-link active" data-i18n="nav_home">首页</a>
+      <a href="#about" class="nav-link" data-i18n="nav_about">关于</a>
+      <a href="#stack" class="nav-link" data-i18n="nav_stack">技术栈</a>
+      <a href="#projects" class="nav-link" data-i18n="nav_projects">项目</a>
+      <a href="#contact" class="nav-link" data-i18n="nav_contact">联系</a>
+    </div>
+    <button class="lang-toggle" id="langToggle" type="button" data-i18n-aria="aria_lang_switch" aria-label="切换语言">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m5 8 6 6"></path>
+        <path d="m4 14 6-6 2-3"></path>
+        <path d="M2 5h12"></path>
+        <path d="M7 2h1"></path>
+        <path d="m22 22-5-10-5 10"></path>
+        <path d="M14 18h6"></path>
+      </svg>
+      <span class="lang-current" id="langCurrent">EN</span>
+    </button>
+  </nav>
+
+  <!-- 主内容 -->
+  <main class="container">
+    <!-- Hero Bento Grid -->
+    <section class="bento" id="home">
+      <!-- 大卡片：自我介绍 -->
+      <article class="card card-hero glass" data-tilt>
+        <div class="card-tag" data-i18n="hero_tag">✦ 学生 · 独立开发者</div>
+        <h1 class="hero-title">
+          <span class="reveal-text" data-i18n="hero_hello">你好，我是</span>
+          <span class="hero-name" data-i18n="hero_name">MiaM1ku</span>
+        </h1>
+        <p class="hero-desc" data-i18n="hero_desc">
+          来自中国的学生，喜欢全栈开发与运维，也长期折腾 AI 和自动化。<br/>
+          正在学习 Python、Golang、TypeScript (Bun) 与 Android。
+        </p>
+        <div class="hero-actions">
+          <button class="btn-primary" id="heroContact" type="button">
+            <span data-i18n="hero_btn_contact">联系我</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <a class="btn-ghost" href="https://github.com/MiaM1ku" target="_blank" rel="noopener">GitHub ↗</a>
+        </div>
+        <div class="hero-stack">
+          <span>TypeScript</span><span>React</span><span>Bun</span><span>Docker</span><span>Python</span><span>Go</span>
+        </div>
+      </article>
+
+      <!-- 头像卡 -->
+      <article class="card card-avatar glass" data-tilt>
+        <div class="avatar-ring">
+          <div class="avatar-inner">
+            <img class="avatar-img" id="avatarImg"
+                 src="https://q1.qlogo.cn/g?b=qq&nk=3428936776&s=640"
+                 data-fallback="https://q.qlogo.cn/headimg_dl?dst_uin=3428936776&spec=640"
+                 alt="MiaM1ku" data-i18n-alt="avatar_alt" referrerpolicy="no-referrer" decoding="async" />
+          </div>
+        </div>
+        <div class="avatar-info">
+          <span class="avatar-name" data-i18n="hero_name">MiaM1ku</span>
+          <span class="avatar-loc" data-i18n="avatar_loc">📍 中国 · UTC+8</span>
+        </div>
+      </article>
+
+      <!-- 实时时钟卡 -->
+      <article class="card card-time glass" data-tilt>
+        <div class="card-label" data-i18n="time_label">本地时间</div>
+        <div class="clock" id="clock">00:00:00</div>
+        <div class="clock-date" id="clockDate">2026.01.01</div>
+        <div class="time-bar">
+          <div class="time-progress" id="timeProgress"></div>
+        </div>
+      </article>
+
+      <!-- 网站运行卡 -->
+      <article class="card card-uptime glass" data-tilt>
+        <div class="card-label" data-i18n="uptime_label">本站已运行</div>
+        <div class="uptime-value">
+          <span class="uptime-num" id="uptimeDays">0</span>
+          <span class="uptime-unit" data-i18n="uptime_day">天</span>
+        </div>
+        <div class="uptime-hm" id="uptimeHm">00时 00分</div>
+        <div class="uptime-since" id="uptimeSince">since 2026.10.27</div>
+      </article>
+
+      <!-- 兴趣标签卡 -->
+      <article class="card card-interests glass" data-tilt>
+        <div class="card-label" data-i18n="interests_label">兴趣领域</div>
+        <div class="interest-tags">
+          <span class="interest-tag" style="--d:0s" data-i18n="tag_coding">💻 编程</span>
+          <span class="interest-tag" style="--d:.05s" data-i18n="tag_tech">🛰️ 科技前沿</span>
+          <span class="interest-tag" style="--d:.1s" data-i18n="tag_ai">🧠 人工智能</span>
+          <span class="interest-tag" style="--d:.15s" data-i18n="tag_python">🐍 Python</span>
+          <span class="interest-tag" style="--d:.2s" data-i18n="tag_go">🐹 Golang</span>
+          <span class="interest-tag" style="--d:.25s" data-i18n="tag_ts">🟦 TypeScript</span>
+          <span class="interest-tag" style="--d:.3s" data-i18n="tag_bun">🍞 Bun</span>
+          <span class="interest-tag" style="--d:.35s" data-i18n="tag_android">🤖 Android</span>
+          <span class="interest-tag" style="--d:.4s">🐧 Linux</span>
+          <span class="interest-tag" style="--d:.45s" data-i18n="tag_opensource">🌱 开源</span>
+          <span class="interest-tag" style="--d:.5s" data-i18n="tag_tinker">🛠️ 折腾</span>
+          <span class="interest-tag" style="--d:.55s" data-i18n="tag_automation">⚙️ 自动化</span>
+          <span class="interest-tag" style="--d:.6s" data-i18n="tag_network">🌐 网络</span>
+        </div>
+      </article>
+
+      <!-- GitHub 卡 -->
+      <article class="card card-stat glass" data-tilt>
+        <div class="card-label">GitHub</div>
+        <a class="stat-value" href="https://github.com/MiaM1ku" target="_blank" rel="noopener">@MiaM1ku</a>
+        <div class="stat-hint" data-i18n="github_hint">50+ 公开仓库 ↗</div>
+      </article>
+
+      <!-- QQ 卡 -->
+      <button class="card card-stat card-qq glass" id="qqCard" type="button" data-i18n-aria="aria_copy_qq" aria-label="复制 QQ 号" data-copy-qq data-tilt>
+        <div class="card-label">QQ</div>
+        <div class="stat-value">3428936776</div>
+        <div class="stat-hint" data-i18n="qq_hint">点击复制 📋</div>
+      </button>
+
+      <!-- 社交卡 -->
+      <article class="card card-social glass" data-tilt>
+        <div class="card-label" data-i18n="social_label">社交</div>
+        <div class="social-list">
+          <a class="social-item" href="https://github.com/MiaM1ku" target="_blank" rel="noopener">
+            <span class="social-icon" aria-hidden="true">🐙</span>
+            <span class="social-name">GitHub</span>
+            <span class="social-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="social-item" href="https://nyaa.fun" target="_blank" rel="noopener">
+            <span class="social-icon" aria-hidden="true">🌐</span>
+            <span class="social-name" data-i18n="social_site">本站</span>
+            <span class="social-arrow" aria-hidden="true">↗</span>
+          </a>
+          <button class="social-item" type="button" data-copy-qq>
+            <span class="social-icon" aria-hidden="true">🐧</span>
+            <span class="social-name">QQ</span>
+            <span class="social-arrow social-value">3428936776</span>
+          </button>
+          <a class="social-item" href="https://github.com/MiaM1ku?tab=repositories" target="_blank" rel="noopener">
+            <span class="social-icon" aria-hidden="true">📦</span>
+            <span class="social-name" data-i18n="social_repos">仓库</span>
+            <span class="social-arrow" aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- 随手记卡 -->
+      <article class="card card-cave glass" data-tilt id="caveCard" role="button" tabindex="0"
+               data-i18n-aria="aria_note_next" aria-label="换一句随手记">
+        <div class="cave-header">
+          <span class="cave-title" data-i18n="cave_title">随手记</span>
+          <span class="cave-hint" data-i18n="cave_hint">点击换一句</span>
+        </div>
+        <p class="cave-text" id="hitokoto">先跑起来，再跑得快。</p>
+        <span class="cave-from" id="caveFrom" data-i18n="cave_from">— 随手记</span>
+      </article>
+    </section>
+
+    <!-- 关于 -->
+    <section class="section" id="about">
+      <h2 class="section-title"><span class="section-num">01</span> <span data-i18n="about_title">关于我</span></h2>
+      <div class="about-grid">
+        <div class="about-card glass" data-reveal>
+          <div class="about-icon" aria-hidden="true">💻</div>
+          <h3 data-i18n="about_h1">编程</h3>
+          <p data-i18n="about_p1">喜欢把想法写成能跑起来的东西：脚本、小工具、服务端、界面，能亲手做出来就很开心。</p>
+        </div>
+        <div class="about-card glass" data-reveal>
+          <div class="about-icon" aria-hidden="true">🛰️</div>
+          <h3 data-i18n="about_h2">科技前沿</h3>
+          <p data-i18n="about_p2">对新技术保持雷达常开，看到有意思的东西就想拆开看看它是怎么跑起来的。</p>
+        </div>
+        <div class="about-card glass" data-reveal>
+          <div class="about-icon" aria-hidden="true">🧠</div>
+          <h3 data-i18n="about_h3">人工智能</h3>
+          <p data-i18n="about_p3">关注大模型与 Agent 工程，更在意把 AI 接到真实工具和工作流里，让它真的干活。</p>
+        </div>
+        <div class="about-card glass" data-reveal>
+          <div class="about-icon" aria-hidden="true">🌱</div>
+          <h3 data-i18n="about_h4">持续学习</h3>
+          <p data-i18n="about_p4">Python、Golang、TypeScript (Bun)、Android 都在路上——边学边写，边写边拆。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 技术栈 -->
+    <section class="section" id="stack">
+      <h2 class="section-title"><span class="section-num">02</span> <span data-i18n="stack_title">技术栈 · 正在学习</span></h2>
+      <div class="stack-grid">
+        <div class="stack-card glass" data-reveal style="--level:78%">
+          <div class="stack-head">
+            <span class="stack-emoji" aria-hidden="true">🐍</span>
+            <div>
+              <div class="stack-name">Python</div>
+              <div class="stack-sub" data-i18n="stack_py_sub">SCRIPT · TOOLING · AI</div>
+            </div>
+          </div>
+          <p class="stack-desc" data-i18n="stack_py_desc">最顺手的一门。写脚本、做小工具、跑数据处理和 AI 实验，几乎什么都先用它试一遍。</p>
+          <div class="stack-bar"><div class="stack-fill"></div></div>
+          <div class="stack-meta"><span data-i18n="level_fluent">顺手</span><span>78%</span></div>
+        </div>
+
+        <div class="stack-card glass" data-reveal style="--level:62%">
+          <div class="stack-head">
+            <span class="stack-emoji" aria-hidden="true">🐹</span>
+            <div>
+              <div class="stack-name">Golang</div>
+              <div class="stack-sub" data-i18n="stack_go_sub">SERVICE · CONCURRENCY · CLI</div>
+            </div>
+          </div>
+          <p class="stack-desc" data-i18n="stack_go_desc">在学习中。喜欢它部署简单、并发省心，写网络服务和命令行工具的顺手程度越来越高。</p>
+          <div class="stack-bar"><div class="stack-fill"></div></div>
+          <div class="stack-meta"><span data-i18n="level_advancing">进阶中</span><span>62%</span></div>
+        </div>
+
+        <div class="stack-card glass" data-reveal style="--level:55%">
+          <div class="stack-head">
+            <span class="stack-emoji" aria-hidden="true">🟦</span>
+            <div>
+              <div class="stack-name">TypeScript</div>
+              <div class="stack-sub" data-i18n="stack_ts_sub">BUN · WEB · TOOLCHAIN</div>
+            </div>
+          </div>
+          <p class="stack-desc" data-i18n="stack_ts_desc">在学习中，用 Bun 跑脚本和服务很舒服。前端页面、插件、小工具链都靠它撑着。</p>
+          <div class="stack-bar"><div class="stack-fill"></div></div>
+          <div class="stack-meta"><span data-i18n="level_advancing">进阶中</span><span>55%</span></div>
+        </div>
+
+        <div class="stack-card glass" data-reveal style="--level:45%">
+          <div class="stack-head">
+            <span class="stack-emoji" aria-hidden="true">🤖</span>
+            <div>
+              <div class="stack-name">Android</div>
+              <div class="stack-sub" data-i18n="stack_android_sub">KOTLIN · SYSTEM · MODULE</div>
+            </div>
+          </div>
+          <p class="stack-desc" data-i18n="stack_android_desc">刚上路。从 Kotlin 基础到系统能力和模块化折腾，想弄明白一个 App 到底是怎么跑在手机上的。</p>
+          <div class="stack-bar"><div class="stack-fill"></div></div>
+          <div class="stack-meta"><span data-i18n="level_beginner">入门中</span><span>45%</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 项目 -->
+    <section class="section" id="projects">
+      <h2 class="section-title"><span class="section-num">03</span> <span data-i18n="proj_title">项目</span></h2>
+      <div class="project-grid">
+        <a class="project-card glass" data-reveal href="https://github.com/MiaM1ku/taierspeedtest" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,#0ea5e9,#22d3ee)">
+            <span class="project-emoji" aria-hidden="true">🌐</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span>Go</span><span class="proj-star" data-repo="MiaM1ku/taierspeedtest">★ 87</span></div>
+            <h3>taierspeedtest</h3>
+            <p data-i18n="proj_d1">全球网测 / 泰尔测速的 Linux 客户端，把测速这件事搬到命令行里。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+
+        <a class="project-card glass" data-reveal href="https://github.com/MiaM1ku/AliMPay" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,#7c6cff,#ff6cb8)">
+            <span class="project-emoji" aria-hidden="true">💳</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span>TypeScript</span><span class="proj-star" data-repo="MiaM1ku/AliMPay">★ 379</span></div>
+            <h3>AliMPay</h3>
+            <p data-i18n="proj_d2">支付聚合面板，多通道统一接入，把收款这件事做成能自己掌控的样子。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+
+        <a class="project-card glass" data-reveal href="https://github.com/MiaM1ku/Miband-OPlusBridge" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,#22c55e,#0ea5e9)">
+            <span class="project-emoji" aria-hidden="true">⌚</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span>Java</span><span>LSPosed</span><span class="proj-star" data-repo="MiaM1ku/Miband-OPlusBridge">★ 22</span></div>
+            <h3>Miband-OPlusBridge</h3>
+            <p data-i18n="proj_d3">LSPosed 模块：把小米手环 / 手表接入 ColorOS 设备中心与 OPPO 健康。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+
+        <a class="project-card glass" data-reveal href="https://github.com/MiaM1ku/termius-mcp" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">
+            <span class="project-emoji" aria-hidden="true">🛰️</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span>Python</span><span>MCP</span><span class="proj-star" data-repo="MiaM1ku/termius-mcp">★ 12</span></div>
+            <h3>termius-mcp</h3>
+            <p data-i18n="proj_d4">给 AI 一把 SSH 钥匙：Termius Cloud 的 stdio MCP 服务器。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+
+        <a class="project-card glass" data-reveal href="https://github.com/Ikaleio/monoize" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,#64748b,#0f172a)">
+            <span class="project-emoji" aria-hidden="true">🦀</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span>Rust</span><span>LLM Gateway</span><span class="proj-star" data-repo="Ikaleio/monoize">★ 26</span></div>
+            <h3>monoize</h3>
+            <p data-i18n="proj_d7">Rust 写的 LLM API 网关，和 Ikaleio 一起折腾的项目。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+
+        <a class="project-card glass" data-reveal href="https://github.com/MiaM1ku/koishi-plugin-bilibili-adapter" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,#fb7299,#4ade80)">
+            <span class="project-emoji" aria-hidden="true">💬</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span>TypeScript</span><span>Koishi</span></div>
+            <h3>koishi-plugin-bilibili-adapter</h3>
+            <p data-i18n="proj_d5">Koishi 的哔哩哔哩私信适配器，让机器人和 B 站私信互通。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+
+        <a class="project-card glass" data-reveal href="https://github.com/MiaM1ku?tab=repositories&q=qplayer" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,#a855f7,#6366f1)">
+            <span class="project-emoji" aria-hidden="true">🎧</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span>JavaScript</span><span>Plugin</span></div>
+            <h3>QPlayer 音源插件</h3>
+            <p data-i18n="proj_d6">给 QPlayer 写的一串音源插件：酷狗、酷我、咪咕、汽水、Apple Music。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+
+        <a class="project-card glass more" data-reveal href="https://github.com/MiaM1ku?tab=repositories" target="_blank" rel="noopener">
+          <div class="project-visual" style="background:linear-gradient(135deg,rgba(124,108,255,.22),rgba(255,108,184,.18))">
+            <span class="project-emoji" aria-hidden="true">＋</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags"><span data-i18n="proj_more_tag">ALL</span></div>
+            <h3 data-i18n="proj_more">更多仓库</h3>
+            <p data-i18n="proj_more_desc">GitHub 上还有一堆在折腾的小东西，慢慢翻。</p>
+            <span class="project-link">GitHub ↗</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- 联系 -->
+    <section class="section" id="contact">
+      <h2 class="section-title"><span class="section-num">04</span> <span data-i18n="contact_title">联系我</span></h2>
+      <div class="contact-card glass" data-reveal>
+        <div class="contact-glow" aria-hidden="true"></div>
+        <h2 class="contact-headline" data-i18n="contact_headline">聊两句？</h2>
+        <p class="contact-sub" data-i18n="contact_sub">技术、AI、开源，或者只是路过想打个招呼——都欢迎。</p>
+        <button type="button" class="contact-email" data-copy-qq>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 4h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 0-2z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>QQ 3428936776</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="contact-socials">
+          <a href="https://github.com/MiaM1ku" target="_blank" rel="noopener">GitHub: @MiaM1ku</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://nyaa.fun" target="_blank" rel="noopener">nyaa.fun</a>
+          <span aria-hidden="true">·</span>
+          <button type="button" class="link-btn" data-copy-qq>QQ: 3428936776</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 友情链接（页面最下面） -->
+    <section class="section section-friends" id="friends">
+      <h2 class="section-title"><span class="section-num">05</span> <span data-i18n="friends_title">友情链接</span></h2>
+      <div class="friends-grid">
+        <!-- 加友链：复制一个 <a>，改 href / 徽标两三个字母 / 域名 / 一句介绍 就行 -->
+        <a class="friend-card glass" data-reveal href="https://ikale.io" target="_blank" rel="noopener">
+          <span class="friend-badge" style="--g1:#7c6cff;--g2:#ff6cb8" aria-hidden="true">ik</span>
+          <span class="friend-meta">
+            <span class="friend-name">Ikaleio</span>
+            <span class="friend-desc" data-i18n="friend_ikaleio">一起做过 monoize</span>
+          </span>
+          <span class="friend-arrow" aria-hidden="true">↗</span>
+        </a>
+
+        <a class="friend-card glass" data-reveal href="https://guimc.ltd/" target="_blank" rel="noopener">
+          <span class="friend-badge" style="--g1:#0ea5e9;--g2:#22d3ee" aria-hidden="true">gu</span>
+          <span class="friend-meta">
+            <span class="friend-name">guimc.ltd</span>
+            <span class="friend-desc" data-i18n="friend_guimc">朋友的小站</span>
+          </span>
+          <span class="friend-arrow" aria-hidden="true">↗</span>
+        </a>
+
+        <a class="friend-card glass" data-reveal href="https://weqiu.top/" target="_blank" rel="noopener">
+          <span class="friend-badge" style="--g1:#f59e0b;--g2:#ef4444" aria-hidden="true">wq</span>
+          <span class="friend-meta">
+            <span class="friend-name">weqiu.top</span>
+            <span class="friend-desc" data-i18n="friend_weqiu">朋友的小站</span>
+          </span>
+          <span class="friend-arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      <div class="footer-beian">
+        <span>© <span id="footerYear">2026</span> MiaM1ku · <span data-i18n="footer_brand">Nya 的学习笔记</span> · nyaa.fun</span>
+        <span aria-hidden="true">·</span>
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">鄂ICP备2026061754号-1</a>
+      </div>
+      <div class="footer-powered">
+        Powered By <span class="heart" aria-hidden="true">❤</span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- 主题切换按钮 -->
+  <button class="theme-btn" id="themeBtn" type="button" data-i18n-aria="aria_theme_to_light" aria-label="切换主题">
+    <svg class="theme-icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.5 4.5l2 2M17.5 17.5l2 2M4.5 19.5l2-2M17.5 6.5l2-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <svg class="theme-icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <!-- 浮动回到顶部按钮（带滚动进度环） -->
+  <button class="back-to-top" id="backToTop" type="button" data-i18n-aria="aria_back_top" aria-label="回到顶部">
+    <svg class="progress-ring" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+      <circle class="progress-ring-bg" cx="24" cy="24" r="21" fill="none" stroke-width="2" />
+      <circle class="progress-ring-fg" id="progressRingFg" cx="24" cy="24" r="21" fill="none" stroke-width="2" />
+    </svg>
+    <svg class="arrow-up" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M8 3L3 8M8 3l5 5M8 3v10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <!-- 复制提示 -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/echoCaveData.js"></script>
+  <script src="assets/js/shader.js"></script>
+  <script src="assets/js/script.js"></script>
+</body>
+</html>
