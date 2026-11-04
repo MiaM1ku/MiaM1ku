@@ -906,6 +906,195 @@ a.stat-value:hover {
   opacity: 1;
 }
 
+/* --- 设备状态（数据由 script.js 的 initDevices 渲染） --- */
+.card-device {
+  --dev-color: var(--text-muted);
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 196px;
+}
+
+.card-device[data-state="online"] {
+  --dev-color: var(--accent-3);
+}
+.card-device[data-state="idle"] {
+  --dev-color: #f59e0b;
+}
+.card-device[data-state="locked"],
+.card-device[data-state="screen-off"] {
+  --dev-color: #38bdf8;
+}
+.card-device[data-state="loading"] {
+  --dev-color: var(--accent);
+}
+
+.device-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.device-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.device-icon {
+  font-size: 14px;
+}
+
+.device-pill {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 11px 4px 9px;
+  border: 1px solid var(--glass-border);
+  border-radius: 100px;
+  background: var(--fill-soft);
+  font-size: 12px;
+  color: var(--dev-color);
+  transition: color 0.3s;
+}
+
+.device-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dev-color);
+  transition: background 0.3s;
+}
+
+.card-device[data-state="online"] .device-dot::after,
+.card-device[data-state="loading"] .device-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--dev-color);
+  animation: devicePulse 2s ease-out infinite;
+}
+
+@keyframes devicePulse {
+  from {
+    opacity: 0.8;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+.device-app {
+  overflow: hidden;
+  font-size: clamp(18px, 1.9vw, 21px);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-device[data-state="offline"] .device-app,
+.card-device[data-state="unavailable"] .device-app {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.device-sub {
+  min-height: 1.5em;
+  margin-top: 4px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-meters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px 16px;
+  margin: 14px 0;
+}
+
+.device-meters:empty {
+  display: none;
+}
+
+.device-meter-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.device-meter-val {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.device-bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 100px;
+  background: var(--fill-soft);
+}
+
+.device-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.8s var(--ease);
+}
+
+.device-fill.hot {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.device-meter.battery .device-fill {
+  background: linear-gradient(90deg, var(--accent-3), #22d3ee);
+}
+
+.device-meter.battery.low .device-fill {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.device-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.device-model {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-seen {
+  flex-shrink: 0;
+}
+
 /* ============================ 6. Section ============================ */
 .section {
   margin-bottom: var(--section-gap);
@@ -1547,7 +1736,8 @@ a.stat-value:hover {
   .card-avatar,
   .card-interests,
   .card-social,
-  .card-cave {
+  .card-cave,
+  .card-device {
     grid-column: span 2;
   }
   .card-time,
@@ -1597,7 +1787,8 @@ a.stat-value:hover {
   .card-interests,
   .card-stat,
   .card-social,
-  .card-cave {
+  .card-cave,
+  .card-device {
     grid-column: span 1;
   }
 

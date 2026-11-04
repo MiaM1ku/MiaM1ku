@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /devices/
+Disallow: /tests/
 
 Sitemap: https://MiaM1ku.cn/sitemap.xml

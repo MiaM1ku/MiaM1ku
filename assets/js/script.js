@@ -725,6 +725,258 @@
     });
   }
 
+  /* ============================== 设备状态 ============================== */
+  /* 首页保持纯静态：只有浏览器里真实打开页面、卡片进入视口且标签页可见时才请求
+     /api/status（EdgeOne Edge Functions）；爬虫和无头浏览器直接跳过。协议见 devices/PROTOCOL.md */
+  function initDevices() {
+    var cards = $$('.card-device[data-device]');
+    if (!cards.length) return;
+
+    var API = '/api/status';
+    var POLL_MS = 30000;
+    var IDLE_AFTER = 300;               /* PC 超过 5 分钟无键鼠输入显示“挂机中” */
+    var BOT_RE = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|pagespeed|prerender|phantomjs|puppeteer|playwright/i;
+
+    var state = 'loading';              /* loading | ready | unavailable */
+    var payload = null;
+    var skew = 0;                       /* 服务端时间 - 本地时间 */
+    var lastFetch = 0;
+    var inView = false;
+    var pollTimer = 0;
+    var tickTimer = 0;
+    var inflight = false;
+
+    var isBot = !window.fetch || navigator.webdriver === true || BOT_RE.test(navigator.userAgent || '');
+
+    /* 设备端用中文写入的占位名称，英文界面下翻译显示 */
+    var LOCK_APP = '锁屏';
+    var APP_I18N = { '隐私应用': 'device_app_private', '桌面': 'device_app_home', '系统界面': 'device_app_systemui', '未知应用': 'device_app_unknown' };
+
+    function appLabel(name) {
+      if (!name) return '';
+      return APP_I18N[name] ? t(APP_I18N[name]) : name;
+    }
+
+    function fmt(key, n) {
+      return t(key).replace('{n}', n).replace('{t}', n);
+    }
+
+    function ago(ms) {
+      var s = Math.max(0, Math.round(ms / 1000));
+      if (s < 10) return t('ago_now');
+      if (s < 60) return fmt('ago_sec', s);
+      if (s < 3600) return fmt('ago_min', Math.floor(s / 60));
+      if (s < 86400) return fmt('ago_hour', Math.floor(s / 3600));
+      return fmt('ago_day', Math.floor(s / 86400));
+    }
+
+    function duration(sec) {
+      if (sec < 60) return fmt('dur_sec', sec);
+      if (sec < 3600) return fmt('dur_min', Math.floor(sec / 60));
+      return fmt('dur_hour', Math.floor(sec / 3600));
+    }
+
+    function el(tag, cls, text) {
+      var node = document.createElement(tag);
+      if (cls) node.className = cls;
+      if (text != null) node.textContent = text;
+      return node;
+    }
+
+    function meter(label, value, extra) {
+      var row = el('div', 'device-meter');
+      var head = el('div', 'device-meter-head');
+      head.appendChild(el('span', '', label));
+      head.appendChild(el('span', 'device-meter-val', Math.round(value) + '%' + (extra || '')));
+      var bar = el('div', 'device-bar');
+      var fill = el('div', 'device-fill');
+      fill.style.width = Math.max(0, Math.min(100, value)) + '%';
+      if (value >= 85) fill.classList.add('hot');
+      bar.appendChild(fill);
+      row.appendChild(head);
+      row.appendChild(bar);
+      return row;
+    }
+
+    function deviceById(id) {
+      if (!payload || !Array.isArray(payload.devices)) return null;
+      for (var i = 0; i < payload.devices.length; i += 1) {
+        if (payload.devices[i] && payload.devices[i].id === id) return payload.devices[i];
+      }
+      return null;
+    }
+
+    function setText(card, sel, text) {
+      var node = $(sel, card);
+      if (node) node.textContent = text || '';
+    }
+
+    function renderCard(card) {
+      var id = card.getAttribute('data-device');
+      var meters = $('.device-meters', card);
+      if (meters) meters.textContent = '';
+
+      if (state !== 'ready') {
+        card.setAttribute('data-state', state);
+        setText(card, '.device-state', t(state === 'loading' ? 'device_loading' : 'device_unavailable'));
+        setText(card, '.device-app', state === 'loading' ? '—' : t('device_unavailable_desc'));
+        setText(card, '.device-sub', '');
+        setText(card, '.device-model', '');
+        setText(card, '.device-seen', '');
+        return;
+      }
+
+      var d = deviceById(id);
+      var now = Date.now() + skew;
+      var limit = (payload.offlineAfter || 180) * 1000;
+
+      if (!d || !d.ts) {
+        card.setAttribute('data-state', 'offline');
+        setText(card, '.device-state', t('device_offline'));
+        setText(card, '.device-app', t('device_never'));
+        setText(card, '.device-sub', '');
+        setText(card, '.device-model', '');
+        setText(card, '.device-seen', '');
+        return;
+      }
+
+      var age = now - d.ts;
+      var online = d.online && age < limit;
+      var lockedApp = d.app === LOCK_APP;
+      var view = 'offline';
+      if (online) {
+        view = 'online';
+        if (d.screen === 'off') view = 'screen-off';
+        else if (d.screen === 'locked' || lockedApp) view = 'locked';
+        else if (id === 'pc' && d.idle >= IDLE_AFTER) view = 'idle';
+      }
+
+      var stateKey = {
+        online: 'device_online',
+        idle: 'device_idle',
+        locked: 'device_locked',
+        'screen-off': 'device_screen_off',
+        offline: 'device_offline'
+      }[view];
+
+      card.setAttribute('data-state', view);
+      setText(card, '.device-state', t(stateKey));
+
+      var app = appLabel(d.app);
+      var appLine;
+      if (view === 'locked') appLine = t(id === 'pc' ? 'device_pc_locked' : 'device_phone_locked');
+      else if (view === 'screen-off') appLine = t('device_phone_off');
+      else if (online) appLine = app || '—';
+      else appLine = app && !lockedApp ? t('device_last_app') + app : t('device_offline_desc');
+      setText(card, '.device-app', appLine);
+
+      var sub = '';
+      if (view === 'online' || view === 'idle') {
+        if (view === 'idle') sub = fmt('device_idle_for', duration(d.idle));
+        else if (d.title && d.title !== d.app) sub = d.title;
+        else if (d.pkg && d.pkg !== d.app) sub = d.pkg;
+      }
+      setText(card, '.device-sub', sub);
+
+      if (meters && online) {
+        if (typeof d.cpu === 'number') meters.appendChild(meter(t('device_cpu'), d.cpu));
+        if (typeof d.mem === 'number') meters.appendChild(meter(t('device_mem'), d.mem));
+      }
+      if (meters && typeof d.battery === 'number') {
+        var row = meter(t('device_battery'), d.battery, d.charging ? ' ⚡' : '');
+        row.classList.add('battery');
+        if (d.battery <= 20 && !d.charging) row.classList.add('low');
+        if (d.charging) row.setAttribute('title', t('device_charging'));
+        meters.appendChild(row);
+      }
+
+      setText(card, '.device-model', [d.model, d.os].filter(Boolean).join(' · '));
+      setText(card, '.device-seen', fmt(online ? 'device_updated' : 'device_seen', ago(age)).replace(/^\S/, function (c) {
+        return getLang() === 'en' ? c.toUpperCase() : c;
+      }));
+    }
+
+    function render() {
+      cards.forEach(renderCard);
+    }
+
+    function active() {
+      return inView && !document.hidden;
+    }
+
+    function load() {
+      if (inflight || isBot) return;
+      inflight = true;
+      lastFetch = Date.now();
+
+      fetch(API, { cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (!data || !Array.isArray(data.devices)) throw new Error('bad payload');
+          payload = data;
+          skew = typeof data.now === 'number' ? data.now - Date.now() : 0;
+          state = 'ready';
+        })
+        .catch(function () {
+          /* 已有数据时保留上一次的结果，只在首次失败时显示不可用 */
+          if (!payload) state = 'unavailable';
+        })
+        .then(function () {
+          inflight = false;
+          render();
+        });
+    }
+
+    function schedule() {
+      clearTimeout(pollTimer);
+      clearInterval(tickTimer);
+      if (!active()) return;
+
+      var wait = Math.max(0, POLL_MS - (Date.now() - lastFetch));
+      if (wait === 0) load();
+      pollTimer = setTimeout(function loop() {
+        if (!active()) return;
+        load();
+        pollTimer = setTimeout(loop, POLL_MS);
+      }, wait || POLL_MS);
+
+      /* 相对时间每 5 秒刷新一次，无需额外请求 */
+      tickTimer = setInterval(function () { if (state === 'ready') render(); }, 5000);
+    }
+
+    render();
+    DYN.push(render);
+
+    if (isBot) {
+      state = 'unavailable';
+      render();
+      return;
+    }
+
+    if ('IntersectionObserver' in window) {
+      var seen = {};
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          seen[entry.target.getAttribute('data-device')] = entry.isIntersecting;
+        });
+        var any = Object.keys(seen).some(function (k) { return seen[k]; });
+        if (any !== inView) {
+          inView = any;
+          schedule();
+        }
+      }, { rootMargin: '120px 0px' });
+      cards.forEach(function (card) { io.observe(card); });
+    } else {
+      inView = true;
+      schedule();
+    }
+
+    document.addEventListener('visibilitychange', schedule);
+  }
+
   /* ============================== 彩蛋 ============================== */
   function launchConfetti(count, cx, cy, circle) {
     if (!motionOK()) return;
@@ -907,6 +1159,7 @@
     initUptime();
     initEggs();
     initStars();
+    initDevices();
 
     /* 首屏统一落地一次文案（也会触发 DYN 里的动态内容） */
     applyLang(getLang());

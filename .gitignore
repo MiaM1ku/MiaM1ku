@@ -16,3 +16,6 @@ desktop.ini
 
 # 依赖（本站为纯静态、无构建步骤，占位防止误传）
 node_modules/
+
+# 设备上报密钥（只保存在本机，部署时写入 Makers 环境变量）
+.secrets/
