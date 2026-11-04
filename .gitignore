@@ -19,3 +19,7 @@ node_modules/
 
 # 设备上报密钥（只保存在本机，部署时写入 Makers 环境变量）
 .secrets/
+
+# 设备端上报工具与本地协议文档（按个人环境维护，只留在本机）
+devices/
+__pycache__/

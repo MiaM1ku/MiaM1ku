@@ -238,34 +238,34 @@
         <span class="cave-from" id="caveFrom" data-i18n="cave_from">— 随手记</span>
       </article>
 
-      <!-- 设备状态卡：页面本身静态，卡片进入视口后由 script.js 请求 /api/status（EdgeOne Edge Functions） -->
-      <article class="card card-device glass" data-tilt data-device="pc" data-state="loading">
+      <!-- 设备状态：卡片由 script.js 按 /api/status 返回的设备列表生成（协议见本地文档 devices/PROTOCOL.md）。
+           这张卡片是占位，加载中、服务不可用或还没有设备时显示。 -->
+      <article class="card card-device card-wide glass" id="devicePlaceholder" data-state="loading">
         <div class="device-head">
           <span class="card-label device-label">
-            <span class="device-icon" aria-hidden="true">💻</span>
-            <span data-i18n="device_pc">Windows · 电脑</span>
+            <span class="device-icon" aria-hidden="true">🖥️</span>
+            <span data-i18n="device_section">设备状态</span>
           </span>
           <span class="device-pill"><i class="device-dot" aria-hidden="true"></i><span class="device-state">…</span></span>
         </div>
         <div class="device-app" aria-live="polite">—</div>
-        <div class="device-sub"></div>
-        <div class="device-meters"></div>
-        <div class="device-foot"><span class="device-model"></span><span class="device-seen"></span></div>
       </article>
 
-      <article class="card card-device glass" data-tilt data-device="phone" data-state="loading">
-        <div class="device-head">
-          <span class="card-label device-label">
-            <span class="device-icon" aria-hidden="true">📱</span>
-            <span data-i18n="device_phone">Android · 手机</span>
-          </span>
-          <span class="device-pill"><i class="device-dot" aria-hidden="true"></i><span class="device-state">…</span></span>
-        </div>
-        <div class="device-app" aria-live="polite">—</div>
-        <div class="device-sub"></div>
-        <div class="device-meters"></div>
-        <div class="device-foot"><span class="device-model"></span><span class="device-seen"></span></div>
-      </article>
+      <template id="deviceTemplate">
+        <article class="card card-device glass" data-tilt>
+          <div class="device-head">
+            <span class="card-label device-label">
+              <span class="device-icon" aria-hidden="true"></span>
+              <span class="device-name"></span>
+            </span>
+            <span class="device-pill"><i class="device-dot" aria-hidden="true"></i><span class="device-state"></span></span>
+          </div>
+          <div class="device-app" aria-live="polite"></div>
+          <div class="device-sub"></div>
+          <div class="device-meters"></div>
+          <div class="device-foot"><span class="device-model"></span><span class="device-seen"></span></div>
+        </article>
+      </template>
     </section>
 
     <!-- 关于 -->

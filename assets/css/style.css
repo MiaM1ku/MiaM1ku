@@ -915,6 +915,19 @@ a.stat-value:hover {
   min-height: 196px;
 }
 
+.card-device[hidden] {
+  display: none;
+}
+
+/* 奇数台设备时最后一张、以及占位卡片占满整行 */
+.card-device.card-wide {
+  grid-column: 1 / -1;
+}
+
+#devicePlaceholder {
+  min-height: 0;
+}
+
 .card-device[data-state="online"] {
   --dev-color: var(--accent-3);
 }
@@ -1003,7 +1016,8 @@ a.stat-value:hover {
 }
 
 .card-device[data-state="offline"] .device-app,
-.card-device[data-state="unavailable"] .device-app {
+.card-device[data-state="unavailable"] .device-app,
+#devicePlaceholder .device-app {
   font-size: 15px;
   font-weight: 500;
   color: var(--text-dim);

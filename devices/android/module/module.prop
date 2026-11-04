@@ -1,6 +1,0 @@
-id=miam1ku_status
-name=MiaM1ku Device Status
-version=v1.0.0
-versionCode=1
-author=MiaM1ku
-description=向 MiaM1ku.cn 上报前台应用、电量与屏幕状态。配置文件：/data/adb/miam1ku_status/config.sh

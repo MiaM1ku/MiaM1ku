@@ -16,7 +16,10 @@
     site: 'MiaM1ku.cn',
     url: 'https://MiaM1ku.cn',
     since: '2026-10-27T00:00:00+08:00',
-    timeZone: 'Asia/Shanghai'
+    timeZone: 'Asia/Shanghai',
+    /* 设备状态：接口地址与刷新间隔（接口由 edge-functions/api/status.js 提供） */
+    devicesApi: '/api/status',
+    devicesPollMs: 30000
   };
 
   /* ============================== 小工具 ============================== */
@@ -326,46 +329,50 @@
   }
 
   /* ============================== 卡片光斑 / 倾斜 ============================== */
+  /* 单卡绑定独立成函数：设备卡片在运行时生成，生成后同样调用它 */
+  function bindCardEffects(card) {
+    if (!mqFine.matches || card.__fx) return;
+    card.__fx = true;
+
+    var tilt = card.hasAttribute('data-tilt');
+    var px = 0;
+    var py = 0;
+    var queued = false;
+
+    card.addEventListener('mousemove', function (e) {
+      px = e.clientX;
+      py = e.clientY;
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () {
+        queued = false;
+        var rect = card.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        var x = px - rect.left;
+        var y = py - rect.top;
+        card.style.setProperty('--mx', x + 'px');
+        card.style.setProperty('--my', y + 'px');
+
+        if (tilt && motionOK()) {
+          var rx = ((y / rect.height) - 0.5) * -5;
+          var ry = ((x / rect.width) - 0.5) * 5;
+          card.style.transform =
+            'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) +
+            'deg) translateY(-2px)';
+        }
+      });
+    }, { passive: true });
+
+    if (tilt) {
+      card.addEventListener('mouseleave', function () {
+        card.style.transform = '';
+      });
+    }
+  }
+
   function initCardEffects() {
-    if (!mqFine.matches) return;
-
-    $$('.card').forEach(function (card) {
-      var tilt = card.hasAttribute('data-tilt');
-      var px = 0;
-      var py = 0;
-      var queued = false;
-
-      card.addEventListener('mousemove', function (e) {
-        px = e.clientX;
-        py = e.clientY;
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(function () {
-          queued = false;
-          var rect = card.getBoundingClientRect();
-          if (!rect.width || !rect.height) return;
-
-          var x = px - rect.left;
-          var y = py - rect.top;
-          card.style.setProperty('--mx', x + 'px');
-          card.style.setProperty('--my', y + 'px');
-
-          if (tilt && motionOK()) {
-            var rx = ((y / rect.height) - 0.5) * -5;
-            var ry = ((x / rect.width) - 0.5) * 5;
-            card.style.transform =
-              'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) +
-              'deg) translateY(-2px)';
-          }
-        });
-      }, { passive: true });
-
-      if (tilt) {
-        card.addEventListener('mouseleave', function () {
-          card.style.transform = '';
-        });
-      }
-    });
+    $$('.card').forEach(bindCardEffects);
   }
 
   /* ============================== 滚动揭示 ============================== */
@@ -726,16 +733,24 @@
   }
 
   /* ============================== 设备状态 ============================== */
-  /* 首页保持纯静态：只有浏览器里真实打开页面、卡片进入视口且标签页可见时才请求
-     /api/status（EdgeOne Edge Functions）；爬虫和无头浏览器直接跳过。协议见 devices/PROTOCOL.md */
+  /* 首页保持纯静态：只有浏览器里真实打开页面、设备区域进入视口且标签页可见时才请求
+     SITE.devicesApi（EdgeOne Edge Functions）；爬虫和无头浏览器直接跳过。
+     卡片按接口返回的设备列表生成，设备的 ID、类型、名称都来自上报端。协议见本地文档 devices/PROTOCOL.md */
   function initDevices() {
-    var cards = $$('.card-device[data-device]');
-    if (!cards.length) return;
+    var placeholder = $('#devicePlaceholder');
+    var template = $('#deviceTemplate');
+    if (!placeholder || !template || !template.content) return;
 
-    var API = '/api/status';
-    var POLL_MS = 30000;
-    var IDLE_AFTER = 300;               /* PC 超过 5 分钟无键鼠输入显示“挂机中” */
+    var IDLE_AFTER = 300;               /* 超过 5 分钟无键鼠输入显示“挂机中” */
     var BOT_RE = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|pagespeed|prerender|phantomjs|puppeteer|playwright/i;
+    var ICONS = { windows: '💻', linux: '🐧', macos: '🍎', android: '📱', ios: '📱', other: '🖥️' };
+    var STATE_KEYS = {
+      online: 'device_online',
+      idle: 'device_idle',
+      locked: 'device_locked',
+      'screen-off': 'device_screen_off',
+      offline: 'device_offline'
+    };
 
     var state = 'loading';              /* loading | ready | unavailable */
     var payload = null;
@@ -745,20 +760,12 @@
     var pollTimer = 0;
     var tickTimer = 0;
     var inflight = false;
+    var cards = {};                     /* 设备 ID → 卡片节点 */
 
     var isBot = !window.fetch || navigator.webdriver === true || BOT_RE.test(navigator.userAgent || '');
 
-    /* 设备端用中文写入的占位名称，英文界面下翻译显示 */
-    var LOCK_APP = '锁屏';
-    var APP_I18N = { '隐私应用': 'device_app_private', '桌面': 'device_app_home', '系统界面': 'device_app_systemui', '未知应用': 'device_app_unknown' };
-
-    function appLabel(name) {
-      if (!name) return '';
-      return APP_I18N[name] ? t(APP_I18N[name]) : name;
-    }
-
-    function fmt(key, n) {
-      return t(key).replace('{n}', n).replace('{t}', n);
+    function fmt(key, value) {
+      return t(key).replace('{n}', value).replace('{t}', value);
     }
 
     function ago(ms) {
@@ -776,11 +783,20 @@
       return fmt('dur_hour', Math.floor(sec / 3600));
     }
 
+    function capitalize(text) {
+      return getLang() === 'en' ? text.replace(/^\S/, function (c) { return c.toUpperCase(); }) : text;
+    }
+
     function el(tag, cls, text) {
       var node = document.createElement(tag);
       if (cls) node.className = cls;
       if (text != null) node.textContent = text;
       return node;
+    }
+
+    function setText(card, sel, text) {
+      var node = $(sel, card);
+      if (node) node.textContent = text || '';
     }
 
     function meter(label, value, extra) {
@@ -798,106 +814,116 @@
       return row;
     }
 
-    function deviceById(id) {
-      if (!payload || !Array.isArray(payload.devices)) return null;
-      for (var i = 0; i < payload.devices.length; i += 1) {
-        if (payload.devices[i] && payload.devices[i].id === id) return payload.devices[i];
-      }
-      return null;
+    function typeOf(d) {
+      return ICONS[d.type] ? d.type : 'other';
     }
 
-    function setText(card, sel, text) {
-      var node = $(sel, card);
-      if (node) node.textContent = text || '';
+    function viewOf(d, online) {
+      if (!online) return 'offline';
+      if (d.screen === 'off') return 'screen-off';
+      if (d.screen === 'locked') return 'locked';
+      if (typeof d.idle === 'number' && d.idle >= IDLE_AFTER) return 'idle';
+      return 'online';
     }
 
-    function renderCard(card) {
-      var id = card.getAttribute('data-device');
-      var meters = $('.device-meters', card);
-      if (meters) meters.textContent = '';
+    function appLine(d, view) {
+      if (view === 'locked') return t('device_locked_desc');
+      if (view === 'screen-off') return t('device_screen_off_desc');
+      var app = d.private ? t('device_app_private') : (d.app || '');
+      if (view === 'offline') return app ? t('device_last_app') + app : t('device_offline_desc');
+      return app || t('device_app_unknown');
+    }
 
-      if (state !== 'ready') {
-        card.setAttribute('data-state', state);
-        setText(card, '.device-state', t(state === 'loading' ? 'device_loading' : 'device_unavailable'));
-        setText(card, '.device-app', state === 'loading' ? '—' : t('device_unavailable_desc'));
-        setText(card, '.device-sub', '');
-        setText(card, '.device-model', '');
-        setText(card, '.device-seen', '');
-        return;
-      }
+    function subLine(d, view) {
+      if (view === 'idle') return fmt('device_idle_for', duration(d.idle));
+      if (view !== 'online' || d.private) return '';
+      if (d.title && d.title !== d.app) return d.title;
+      if (d.pkg && d.pkg !== d.app) return d.pkg;
+      return '';
+    }
 
-      var d = deviceById(id);
+    function renderDevice(card, d) {
       var now = Date.now() + skew;
       var limit = (payload.offlineAfter || 180) * 1000;
-
-      if (!d || !d.ts) {
-        card.setAttribute('data-state', 'offline');
-        setText(card, '.device-state', t('device_offline'));
-        setText(card, '.device-app', t('device_never'));
-        setText(card, '.device-sub', '');
-        setText(card, '.device-model', '');
-        setText(card, '.device-seen', '');
-        return;
-      }
-
-      var age = now - d.ts;
-      var online = d.online && age < limit;
-      var lockedApp = d.app === LOCK_APP;
-      var view = 'offline';
-      if (online) {
-        view = 'online';
-        if (d.screen === 'off') view = 'screen-off';
-        else if (d.screen === 'locked' || lockedApp) view = 'locked';
-        else if (id === 'pc' && d.idle >= IDLE_AFTER) view = 'idle';
-      }
-
-      var stateKey = {
-        online: 'device_online',
-        idle: 'device_idle',
-        locked: 'device_locked',
-        'screen-off': 'device_screen_off',
-        offline: 'device_offline'
-      }[view];
+      var age = d.ts ? now - d.ts : Infinity;
+      var online = !!d.online && age < limit;
+      var view = viewOf(d, online);
+      var type = typeOf(d);
 
       card.setAttribute('data-state', view);
-      setText(card, '.device-state', t(stateKey));
+      card.setAttribute('data-type', type);
+      setText(card, '.device-icon', ICONS[type]);
+      setText(card, '.device-name', d.name || t('device_type_' + type));
+      setText(card, '.device-state', t(STATE_KEYS[view]));
+      setText(card, '.device-app', appLine(d, view));
+      setText(card, '.device-sub', subLine(d, view));
 
-      var app = appLabel(d.app);
-      var appLine;
-      if (view === 'locked') appLine = t(id === 'pc' ? 'device_pc_locked' : 'device_phone_locked');
-      else if (view === 'screen-off') appLine = t('device_phone_off');
-      else if (online) appLine = app || '—';
-      else appLine = app && !lockedApp ? t('device_last_app') + app : t('device_offline_desc');
-      setText(card, '.device-app', appLine);
-
-      var sub = '';
-      if (view === 'online' || view === 'idle') {
-        if (view === 'idle') sub = fmt('device_idle_for', duration(d.idle));
-        else if (d.title && d.title !== d.app) sub = d.title;
-        else if (d.pkg && d.pkg !== d.app) sub = d.pkg;
-      }
-      setText(card, '.device-sub', sub);
-
-      if (meters && online) {
-        if (typeof d.cpu === 'number') meters.appendChild(meter(t('device_cpu'), d.cpu));
-        if (typeof d.mem === 'number') meters.appendChild(meter(t('device_mem'), d.mem));
-      }
-      if (meters && typeof d.battery === 'number') {
-        var row = meter(t('device_battery'), d.battery, d.charging ? ' ⚡' : '');
-        row.classList.add('battery');
-        if (d.battery <= 20 && !d.charging) row.classList.add('low');
-        if (d.charging) row.setAttribute('title', t('device_charging'));
-        meters.appendChild(row);
+      var meters = $('.device-meters', card);
+      if (meters) {
+        meters.textContent = '';
+        if (online && typeof d.cpu === 'number') meters.appendChild(meter(t('device_cpu'), d.cpu));
+        if (online && typeof d.mem === 'number') meters.appendChild(meter(t('device_mem'), d.mem));
+        if (typeof d.battery === 'number') {
+          var row = meter(t('device_battery'), d.battery, d.charging ? ' ⚡' : '');
+          row.classList.add('battery');
+          if (d.battery <= 20 && !d.charging) row.classList.add('low');
+          if (d.charging) row.setAttribute('title', t('device_charging'));
+          meters.appendChild(row);
+        }
       }
 
       setText(card, '.device-model', [d.model, d.os].filter(Boolean).join(' · '));
-      setText(card, '.device-seen', fmt(online ? 'device_updated' : 'device_seen', ago(age)).replace(/^\S/, function (c) {
-        return getLang() === 'en' ? c.toUpperCase() : c;
-      }));
+      setText(card, '.device-seen', d.ts ? capitalize(fmt(online ? 'device_updated' : 'device_seen', ago(age))) : '');
+    }
+
+    /* 让卡片集合与设备列表一致：新增的从模板生成，消失的移除，顺序跟随接口 */
+    function syncCards(list) {
+      var keep = {};
+      var anchor = placeholder;
+      list.forEach(function (d) {
+        keep[d.id] = true;
+        var card = cards[d.id];
+        if (!card) {
+          card = template.content.firstElementChild.cloneNode(true);
+          card.setAttribute('data-device', d.id);
+          cards[d.id] = card;
+          bindCardEffects(card);
+          if (observer) observer.observe(card);
+        }
+        if (anchor.nextElementSibling !== card) anchor.parentNode.insertBefore(card, anchor.nextElementSibling);
+        anchor = card;
+      });
+      Object.keys(cards).forEach(function (id) {
+        if (keep[id]) return;
+        if (observer) observer.unobserve(cards[id]);
+        cards[id].remove();
+        delete cards[id];
+      });
+
+      /* 奇数台设备时最后一张占满整行，避免四列网格里留半行空白 */
+      list.forEach(function (d, i) {
+        cards[d.id].classList.toggle('card-wide', list.length % 2 === 1 && i === list.length - 1);
+      });
     }
 
     function render() {
-      cards.forEach(renderCard);
+      var list = state === 'ready' && payload ? payload.devices.filter(function (d) { return d && d.id; }) : [];
+
+      syncCards(list);
+      list.forEach(function (d) { renderDevice(cards[d.id], d); });
+
+      placeholder.hidden = list.length > 0;
+      if (list.length) return;
+
+      var phState = state === 'ready' ? 'offline' : state;
+      placeholder.setAttribute('data-state', phState);
+      setText(placeholder, '.device-state', t({
+        loading: 'device_loading',
+        unavailable: 'device_unavailable',
+        offline: 'device_offline'
+      }[phState]));
+      setText(placeholder, '.device-app', state === 'loading' ? '—'
+        : state === 'ready' ? t('device_empty') : t('device_unavailable_desc'));
     }
 
     function active() {
@@ -909,7 +935,7 @@
       inflight = true;
       lastFetch = Date.now();
 
-      fetch(API, { cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } })
+      fetch(SITE.devicesApi, { cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } })
         .then(function (res) {
           if (!res.ok) throw new Error('HTTP ' + res.status);
           return res.json();
@@ -935,17 +961,22 @@
       clearInterval(tickTimer);
       if (!active()) return;
 
-      var wait = Math.max(0, POLL_MS - (Date.now() - lastFetch));
+      var poll = SITE.devicesPollMs || 30000;
+      var wait = Math.max(0, poll - (Date.now() - lastFetch));
       if (wait === 0) load();
       pollTimer = setTimeout(function loop() {
         if (!active()) return;
         load();
-        pollTimer = setTimeout(loop, POLL_MS);
-      }, wait || POLL_MS);
+        pollTimer = setTimeout(loop, poll);
+      }, wait || poll);
 
       /* 相对时间每 5 秒刷新一次，无需额外请求 */
       tickTimer = setInterval(function () { if (state === 'ready') render(); }, 5000);
     }
+
+    /* 观察占位卡片和所有设备卡片，任意一张可见即视为设备区域在视口内 */
+    var observer = null;
+    var visible = typeof WeakSet === 'function' ? new WeakSet() : null;
 
     render();
     DYN.push(render);
@@ -956,19 +987,20 @@
       return;
     }
 
-    if ('IntersectionObserver' in window) {
-      var seen = {};
-      var io = new IntersectionObserver(function (entries) {
+    if ('IntersectionObserver' in window && visible) {
+      observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
-          seen[entry.target.getAttribute('data-device')] = entry.isIntersecting;
+          if (entry.isIntersecting) visible.add(entry.target);
+          else visible.delete(entry.target);
         });
-        var any = Object.keys(seen).some(function (k) { return seen[k]; });
+        var nodes = [placeholder].concat(Object.keys(cards).map(function (id) { return cards[id]; }));
+        var any = nodes.some(function (node) { return !node.hidden && visible.has(node); });
         if (any !== inView) {
           inView = any;
           schedule();
         }
       }, { rootMargin: '120px 0px' });
-      cards.forEach(function (card) { io.observe(card); });
+      observer.observe(placeholder);
     } else {
       inView = true;
       schedule();
