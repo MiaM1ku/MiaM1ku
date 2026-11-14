@@ -820,16 +820,64 @@
       return inView && !document.hidden;
     }
 
+    /* QQ 内置浏览器等环境可能拦截跨域 fetch 或丢失 CORS 头；失败时改用 JSONP 取同一份数据 */
+    var jsonpSeq = 0;
+
+    function requestJsonp() {
+      return new Promise(function (resolve, reject) {
+        var name = '__miam1kuStatusCb' + (++jsonpSeq);
+        var script = document.createElement('script');
+        var timer = 0;
+        var settled = false;
+
+        function cleanup() {
+          clearTimeout(timer);
+          script.onerror = null;
+          if (script.parentNode) script.parentNode.removeChild(script);
+          try { delete window[name]; } catch (e) { window[name] = undefined; }
+        }
+
+        window[name] = function (data) {
+          settled = true;
+          cleanup();
+          resolve(data);
+        };
+        script.onerror = function () {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error('jsonp_error'));
+        };
+        script.async = true;
+        script.src = SITE.devicesApi + (SITE.devicesApi.indexOf('?') === -1 ? '?' : '&') +
+          'callback=' + encodeURIComponent(name);
+        document.head.appendChild(script);
+
+        timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error('jsonp_timeout'));
+        }, 8000);
+      });
+    }
+
+    function requestStatus() {
+      if (!window.fetch) return requestJsonp();
+      return fetch(SITE.devicesApi, { cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .catch(function () { return requestJsonp(); });
+    }
+
     function load() {
       if (inflight || isBot) return;
       inflight = true;
       lastFetch = Date.now();
 
-      fetch(SITE.devicesApi, { cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } })
-        .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
+      requestStatus()
         .then(function (data) {
           if (!data || !Array.isArray(data.devices)) throw new Error('bad payload');
           payload = data;
