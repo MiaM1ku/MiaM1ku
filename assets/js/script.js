@@ -3,7 +3,7 @@
    -------------------------------------------------------------------------
    结构：每个功能一个 init 函数，各自查询自己的节点、各自加事件，
         找不到节点就安静退出（局部失效不会拖垮整页）。
-   约定：文案一律走 t(key)；动态文案（随手记 / 运行时长）在语言切换时由
+   约定：文案一律走 t(key)；动态文案（运行时长等）在语言切换时由
         DYN 列表重新渲染，而不是让 data-i18n 把内容覆盖掉。
    ========================================================================= */
 (function () {
@@ -157,7 +157,7 @@
     if (langCurrent) langCurrent.textContent = lang === 'zh' ? 'EN' : '中文';
     if (langToggle) langToggle.setAttribute('aria-label', d.aria_lang_switch || t('aria_lang_switch'));
 
-    /* 动态文案（随手记正文、运行时长单位等） */
+    /* 动态文案（运行时长单位等） */
     DYN.forEach(function (fn) {
       try { fn(); } catch (e) { /* 单个模块失败不影响其它 */ }
     });
@@ -169,7 +169,7 @@
     if (langSwitching) return;
     langSwitching = true;
 
-    var targets = $$('[data-i18n], [data-i18n-alt], .cave-text');
+    var targets = $$('[data-i18n], [data-i18n-alt]');
     targets.forEach(function (el) { el.classList.add('lang-fade'); });
 
     setTimeout(function () {
@@ -467,116 +467,6 @@
     render();
     setInterval(render, 60000);
     DYN.push(render);
-  }
-
-  /* ============================== 随手记 ============================== */
-  function initNote() {
-    var textEl = $('#hitokoto');
-    var fromEl = $('#caveFrom');
-    var card = $('#caveCard');
-    if (!textEl) return;
-
-    var data = (typeof echoCaveData !== 'undefined' && Array.isArray(echoCaveData)) ? echoCaveData : [];
-    if (!data.length) return;
-
-    var index = -1;
-    var current = null;
-    var timer = 0;
-    var token = 0;      /* 每次切换自增，过期的打字任务自动失效 */
-
-    function textOf(item) {
-      if (typeof item === 'string') return item;
-      if (!item) return '';
-      return (getLang() === 'en' && item.en) ? item.en : (item.content || '');
-    }
-
-    function fromOf(item) {
-      return (item && item.from) ? item.from : t('cave_title');
-    }
-
-    function showFrom(item) {
-      if (!fromEl) return;
-      fromEl.textContent = '— ' + fromOf(item);
-      fromEl.classList.add('show');
-    }
-
-    function pick() {
-      if (data.length === 1) return data[0];
-      var i;
-      do { i = Math.floor(Math.random() * data.length); } while (i === index);
-      index = i;
-      return data[i];
-    }
-
-    function type(text, item) {
-      var mine = ++token;
-      var chars = Array.from(text);
-      var i = 0;
-      textEl.textContent = '';
-
-      (function step() {
-        if (mine !== token) return;          /* 已被新的切换顶掉 */
-        if (i < chars.length) {
-          textEl.textContent += chars[i];
-          i += 1;
-          timer = setTimeout(step, 42);
-        } else {
-          showFrom(item);
-        }
-      })();
-    }
-
-    /* animate=true 时先闪一下再逐字打出 */
-    function next(animate) {
-      token += 1;
-      clearTimeout(timer);
-
-      var item = pick();
-      current = item;
-      var text = textOf(item);
-
-      if (fromEl) fromEl.classList.remove('show');
-      textEl.classList.remove('flash');
-
-      if (!animate || !motionOK()) {
-        textEl.textContent = text;
-        showFrom(item);
-        return;
-      }
-
-      var mine = token;
-      textEl.classList.add('flash');
-
-      timer = setTimeout(function () {
-        if (mine !== token) return;
-        textEl.classList.remove('flash');
-        type(text, item);
-      }, 240);
-    }
-
-    /* 语言切换：直接换成对应语言，不重放打字动画 */
-    function refresh() {
-      if (!current) return;
-      token += 1;
-      clearTimeout(timer);
-      textEl.classList.remove('flash');
-      textEl.textContent = textOf(current);
-      showFrom(current);
-    }
-
-    next(false);
-
-    if (card) {
-      card.addEventListener('click', function () { next(true); });
-      card.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-          e.preventDefault();
-          next(true);
-        }
-      });
-    }
-
-    DYN.push(refresh);
   }
 
   /* ============================== Toast / 复制 ============================== */
@@ -1186,7 +1076,6 @@
     initReveal();
     initCopy();
     initAvatar();
-    initNote();
     initClock();
     initUptime();
     initEggs();

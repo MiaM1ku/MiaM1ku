@@ -56,11 +56,6 @@ const i18n = {
     social_site: "本站",
     social_repos: "仓库",
 
-    /* 随手记 */
-    cave_title: "随手记",
-    cave_hint: "点击换一句",
-    cave_from: "— 随手记",
-
     /* 设备状态 */
     device_section: "设备状态",
     device_type_windows: "Windows · 电脑",
@@ -158,7 +153,6 @@ const i18n = {
     aria_theme_to_dark: "切换到深色主题",
     aria_back_top: "回到顶部",
     aria_copy_qq: "复制 QQ 号",
-    aria_note_next: "换一句随手记",
   },
 
   en: {
@@ -204,10 +198,6 @@ const i18n = {
     social_label: "Social",
     social_site: "This Site",
     social_repos: "Repos",
-
-    cave_title: "Notes",
-    cave_hint: "Click for another",
-    cave_from: "— Notes",
 
     device_section: "Devices",
     device_type_windows: "Windows · PC",

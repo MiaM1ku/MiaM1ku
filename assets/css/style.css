@@ -5,7 +5,7 @@
    2. 背景与自定义光标
    3. 导航栏
    4. Bento 卡片骨架与网格
-   5. 各卡片（Hero / 头像 / 时钟 / 运行时长 / 兴趣 / 统计 / 社交 / 随手记）
+   5. 各卡片（Hero / 头像 / 时钟 / 运行时长 / 兴趣 / 统计 / 社交）
    6. Section 通用、关于、技术栈、项目、联系、页脚
    7. 浮动控件、Toast、动效
    8. 响应式与降级
@@ -431,10 +431,7 @@ html.has-cursor * {
   grid-column: span 1;
 }
 .card-social {
-  grid-column: span 2;
-}
-.card-cave {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 /* ============================ 5. 卡片 ============================ */
@@ -832,78 +829,6 @@ a.stat-value:hover {
 .social-value {
   font-family: var(--font-mono);
   font-size: 11px;
-}
-
-/* --- 随手记 --- */
-.card-cave {
-  display: flex;
-  flex-direction: column;
-  /* 卡片被同行的社交卡拉高时，把「— 随手记」压到底部，别留一坨空白 */
-  justify-content: space-between;
-  cursor: pointer;
-}
-
-.cave-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.cave-title {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.cave-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  opacity: 0.7;
-  transition: opacity 0.3s, color 0.3s;
-}
-
-.card-cave:hover .cave-hint {
-  opacity: 1;
-  color: var(--accent);
-}
-
-.cave-text {
-  min-height: 3.4em;
-  font-size: 14.5px;
-  line-height: 1.75;
-  color: var(--accent);
-  overflow-wrap: break-word;
-}
-
-.cave-text.flash {
-  animation: caveFlash 0.24s steps(1, end) forwards;
-}
-
-@keyframes caveFlash {
-  0%,
-  33%,
-  66% {
-    opacity: 1;
-  }
-  16%,
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-.cave-from {
-  margin-top: 10px;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--text-muted);
-  opacity: 0;
-  transition: opacity 0.45s ease 0.2s;
-}
-
-.cave-from.show {
-  opacity: 1;
 }
 
 /* --- 设备状态（数据由 script.js 的 initDevices 渲染） --- */
@@ -1750,7 +1675,6 @@ a.stat-value:hover {
   .card-avatar,
   .card-interests,
   .card-social,
-  .card-cave,
   .card-device {
     grid-column: span 2;
   }
@@ -1801,7 +1725,6 @@ a.stat-value:hover {
   .card-interests,
   .card-stat,
   .card-social,
-  .card-cave,
   .card-device {
     grid-column: span 1;
   }
