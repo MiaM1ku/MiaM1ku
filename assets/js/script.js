@@ -17,8 +17,8 @@
     url: 'https://MiaM1ku.cn',
     since: '2026-10-27T00:00:00+08:00',
     timeZone: 'Asia/Shanghai',
-    /* 设备状态：接口地址与刷新间隔（接口由 edge-functions/api/status.js 提供） */
-    devicesApi: '/api/status',
+    /* 设备状态：独立 API（西安 PVE 上的 LXC，nginx 反代到 devicestatus.miam1ku.cn） */
+    devicesApi: 'https://devicestatus.miam1ku.cn/api/status',
     devicesPollMs: 30000
   };
 
@@ -734,7 +734,7 @@
 
   /* ============================== 设备状态 ============================== */
   /* 首页保持纯静态：只有浏览器里真实打开页面、设备区域进入视口且标签页可见时才请求
-     SITE.devicesApi（EdgeOne Edge Functions）；爬虫和无头浏览器直接跳过。
+     SITE.devicesApi（独立 API：devicestatus.miam1ku.cn）；爬虫和无头浏览器直接跳过。
      卡片按接口返回的设备列表生成，设备的 ID、类型、名称都来自上报端。协议见本地文档 devices/PROTOCOL.md */
   function initDevices() {
     var placeholder = $('#devicePlaceholder');
